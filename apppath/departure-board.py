@@ -46,7 +46,6 @@ class StationCollection(object):
 class Station(object):
 	def __init__(self):
 		
-		#self.__trains = TrainCollection()
 		self.trains = []
 		self.ads = []
 		
@@ -107,21 +106,16 @@ class Station(object):
 			self.__advertizemode=advertizemode
 	
 
-
-
-
 	def GetTrainsFromIniFile (self,inipath):
    				
 		config=ConfigParser()
-		# parse stations file
+		# parse ini file for station. Filename = stationname+.ini
 		config.read(inipath+self.name+'.ini')
 		
 
 		#read countoftrains
 		countoftrains = config.getint('General', 'traincount')
 		logging.info (strftime("%H:%M:%S",time.localtime(time.time()))+': Read '+str(countoftrains)+' trains from: '+inipath+self.name+'.ini')
-
-
 		self.traincount=countoftrains
 		
 		#read trains
@@ -145,6 +139,7 @@ class Station(object):
 			self.trains.append (train)
 
 	def SaveTrainsToIniFile (self,inipath):
+		#used when quitting app, only useful when pyscript is started as sudo
 		config=ConfigParser()
 		# parse stations file
 		config.read(inipath+self.name+'.ini')
@@ -181,9 +176,7 @@ class Station(object):
 			MyAd.active = config.getboolean('Ad'+str(intI), 'active')
 			MyAd.filename = adpath+config.get('Ad'+str(intI), 'filename')
 			self.ads.append (MyAd)
-
 		
-
 	def GetActiveAd(self):
 		MyAd=Ad()
 		returnad = Ad()
@@ -191,7 +184,6 @@ class Station(object):
 			if MyAd.active == True:
 				returnad = MyAd
 		return returnad
-
 
 	def GetNextAd(self):
 		MyAd=Ad()
@@ -215,7 +207,6 @@ class Station(object):
 				MyAd2.active = True
 				returnad = MyAd2
 		return returnad
-
 
 
 class Ad(object):
@@ -575,9 +566,18 @@ class TrainScreen (object):
 		def screenheight(self, screenheight):
 			self.__screenheight=screenheight
 
+		#imagelogofile
+		@property
+		def imagelogofile(self):
+			return self.__imagelogofile
+
+		@imagelogofile.setter
+		def imagelogofile(self, imagelogofile):
+			self.__imagelogofile=imagelogofile
+
 
 	def InitPanel(self):
-		#Init new pygame screen"
+		#Init new pygame screen
 		if self.useTFT==True:
 			os.environ["SDL_FBDEV"] = "/dev/fb1"
 		
@@ -609,7 +609,6 @@ class TrainScreen (object):
 		exit()
 
 	def InitScreen(self):
-		#from time import gmtime, strftime
 		self.strTime = strftime("%H:%M", gmtime())
 		pygame.mouse.set_visible(0)
 		# Fill the screen with white (255, 255, 255)
@@ -618,10 +617,17 @@ class TrainScreen (object):
 
 		if self.activestation.advertizemode == 0:
 			#screenheader
+			imagelogo = pygame.image.load(self.imagelogofile)
+			logging.info (self.imagelogofile)
 			self.screen.blit(imagelogo, (3,5))
 			font=pygame.font.Font('FreeSans.ttf', 11)
-			text=font.render(self.activestation.name+'     ' + self.strTime, 1, (10, 10, 10))
+
+			#station and time
+			text=font.render(self.activestation.name, 1, (10, 10, 10))
 			self.screen.blit(text, (50, 7))
+			text=font.render(self.strTime, 1, (10, 10, 10))
+			self.screen.blit(text, (127, 7))			
+
 
 			#departure header
 			text=font.render('DEPART', 1, (10,10,10))
@@ -635,7 +641,8 @@ class TrainScreen (object):
 				vert2=vert1+2
 				self.screen.blit(text, (5,vert1))
 				if train.logofile != "None":
-					self.screen.blit(train.logofile, (100+train.logoxpos,vert2))
+					imagelogo = pygame.image.load(train.logofile)
+					self.screen.blit(imagelogo, (100+train.logoxpos,vert2))
 				text=font.render(train.rail, 1, (10, 10, 10))
 				self.screen.blit(text, (150,vert1))
 			pygame.display.update()
@@ -693,8 +700,8 @@ class TrainScreen (object):
 			self.strTime = CurTime
 			self.rect = pygame.draw.rect(self.screen, (255, 255, 255), (50, 7, 145, 13), 0)
 			font=pygame.font.Font('FreeSans.ttf', 11)
-			text=font.render(self.activestation.name+'     ' + self.strTime, 1, (10, 10, 10))
-			self.screen.blit(text, (50, 7))
+			text=font.render(self.strtime, 1, (10, 10, 10))
+			self.screen.blit(text, (127, 7))			
 			pygame.display.update()
 	
 
@@ -718,8 +725,6 @@ class TrainScreen (object):
 			MySound.play(0,0,0)
 			logging.info(strftime("%H:%M:%S",time.localtime(time.time()))+": Sound play command given for file: " + audiofile)
 
-
-			#self.activestation.advertize = 2			
 			y1 = 34 + (MyTrain.position * 12)
 			traintext = MyTrain.time + " " + MyTrain.destination
 
@@ -728,12 +733,13 @@ class TrainScreen (object):
 			text=font.render(traintext, 1, (10, 10, 10))
 			self.screen.blit(text, (5,y1))
 			if MyTrain.logofile != "None":
-				self.screen.blit(MyTrain.logofile, (100+MyTrain.logoxpos,y1+2))
+				imagelogo = pygame.image.load(MyTrain.logofile)
+				self.screen.blit(imagelogo, (100+MyTrain.logoxpos,y1+2))
 			text=font.render(MyTrain.rail, 1, (10, 10, 10))
 			self.screen.blit(text, (150,y1))
 			pygame.display.update()
 
-			#tekst 3x laten knipperen
+			#flash text 3 times
 			for intI in range (0, 3):
 				time.sleep (0.5)
 				self.rect = pygame.draw.rect(self.screen, (225, 225, 225), (35, y1, 115, 13), 0)
@@ -742,27 +748,29 @@ class TrainScreen (object):
 				text=font.render(MyTrain.destination, 1, (10, 10, 10))
 				self.screen.blit(text, (35,y1))
 				if MyTrain.logofile != "None":
-					self.screen.blit(MyTrain.logofile, (100+MyTrain.logoxpos,y1+1))
+					imagelogo = pygame.image.load(MyTrain.logofile)
+					self.screen.blit(imagelogo, (100+MyTrain.logoxpos,y1+1))
 				pygame.display.update()
 
 
-			#tekst weg laten lopen (naar rechts)
+			#move text to right
 			for intI in range (0, 120):
-				# maak vakje grijs waar de tekst moet scrollen
+				#grey box
 				self.rect = pygame.draw.rect(self.screen, (225, 225, 225), (35, y1, 145, 13), 0)
 				if self.useTFT == True:
 					time.sleep(0.02)
 				text=font.render(MyTrain.destination, 1, (10, 10, 10))
 				self.screen.blit(text, (35+intI,y1))
 				if MyTrain.logofile != "None":
-					self.screen.blit(MyTrain.logofile, (100+MyTrain.logoxpos+intI,y1+1))
+					imagelogo = pygame.image.load(MyTrain.logofile)
+					self.screen.blit(imagelogo, (100+MyTrain.logoxpos+intI,y1+1))
 				self.rect = pygame.draw.rect(self.screen, (225, 225, 225), (145, y1, 15, 13), 0)
 				text=font.render(MyTrain.rail, 1, (10, 10, 10))
 				self.screen.blit(text, (150,y1))
 				self.rect = pygame.draw.rect(self.screen, (255,255,255),(160,y1,160,13),0)
 				pygame.display.update()
 		
-			#tekst op laten komen (vanaf links)
+			#let text appear from left
 			for intI in range (0, 135):
 				# maak vakje grijs waar de tekst moet scrollen
 				self.rect = pygame.draw.rect(self.screen, (225, 225, 225), (0, y1, 145, 13), 0)
@@ -771,7 +779,8 @@ class TrainScreen (object):
 				text=font.render(MyTrain.destination, 1, (10, 10, 10))
 				self.screen.blit(text, (-100+intI,y1))
 				if MyTrain.logofile != "None":
-					self.screen.blit(MyTrain.logofile, (-35+MyTrain.logoxpos+intI,y1+2))
+					imagelogo = pygame.image.load(MyTrain.logofile)
+					self.screen.blit(imagelogo, (-35+MyTrain.logoxpos+intI,y1+2))
 				self.rect = pygame.draw.rect(self.screen, (225, 225, 225), (0, y1, 35, 13), 0)
 				text=font.render(MyTrain.time, 1, (10, 10, 10))
 				self.screen.blit(text, (5,y1))
@@ -790,7 +799,8 @@ class TrainScreen (object):
 				text=font.render(traintext, 1, (10, 10, 10))
 				self.screen.blit(text, (5+intI,y1))
 				if MyTrain.logofile != "None":
-					self.screen.blit(MyTrain.logofile, (100+MyTrain.logoxpos+intI,y1+2))
+					imagelogo = pygame.image.load(MyTrain.logofile)
+					self.screen.blit(imagelogo, (100+MyTrain.logoxpos+intI,y1+2))
 				text=font.render(MyTrain.rail, 1, (10, 10, 10))
 				self.screen.blit(text, (150+intI,y1))
 				self.rect = pygame.draw.rect(self.screen, (255,255,255),(160,y1,160,13),0)
@@ -820,7 +830,8 @@ class TrainScreen (object):
 						self.rect = pygame.draw.rect(self.screen, (255, 255, 255), (0, vert1, 160, 14), 0)
 						self.screen.blit(text, (5,vert1))
 						if train.logofile != "None":
-							self.screen.blit(train.logofile, (100+train.logoxpos,vert2))
+							imagelogo = pygame.image.load(train.logofile)
+							self.screen.blit(imagelogo, (100+train.logoxpos,vert2))
 						text=font.render(train.rail, 1, (225, 225, 225))
 						self.screen.blit(text, (150,vert1))
 								
@@ -831,15 +842,14 @@ class TrainScreen (object):
 					time.sleep(0.05)
 			
 				
-		#ajust trainpositions
-		
+		#ajust trainpositions		
 		MyStation = Station()
 		MyStation = GetStationByID (stationid)
 		for train in MyStation.trains:
 			if train.position == MyStation.traincount:
 				tijdstip1 = train.time
 	
-			#als > oude positie, dan 1 eraf
+			#if > old position, then subtract 1
 			if train.id != MyTrain.id: 
 				if (train.position == 1 and (train.status == "Incoming")):
 					train.position = 1
@@ -865,8 +875,7 @@ class TrainScreen (object):
 	
 	
 	def TrainArrival(self, newtrainid, newtraintime, newtrainrail, stationid, audiofile):
-		#zoek de juiste trein erbij
-		
+		#find train
 		MyTrain=Train()
 		MyTrain= GetTrainByID(newtrainid, stationid)
 		
@@ -882,7 +891,7 @@ class TrainScreen (object):
 		MyStation = GetStationByID (stationid)
 		
 		for train in MyStation.trains:
-			#als < oude positie, dan 1 erbij op
+			#if < old position, add 1
 			if train.id != MyTrain.id: 
 				if (train.position == 1 and (train.status == "Incoming")):
 						newtrainposition = 2
@@ -924,7 +933,8 @@ class TrainScreen (object):
 							self.rect = pygame.draw.rect(self.screen, (255, 255, 255), (0, vert1, 160, 13), 0)
 							self.screen.blit(text, (5,vert1))
 							if train.logofile != "None":
-								self.screen.blit(train.logofile, (100+train.logoxpos,vert2))
+								imagelogo = pygame.image.load(train.logofile)
+								self.screen.blit(imagelogo, (100+train.logoxpos,vert2))
 							text=font.render(train.rail, 1, (10, 10, 10))
 							self.screen.blit(text, (150,vert1))				
 						else:
@@ -940,8 +950,9 @@ class TrainScreen (object):
 								vert2=vert1+2
 								self.rect = pygame.draw.rect(self.screen, (255, 255, 255), (0, vert1, 160, 14), 0)
 								self.screen.blit(text, (5,vert1))
-								if train.logofile != "None":
-									self.screen.blit(train.logofile, (100+train.logoxpos,vert2))
+								if train.logofile != "None":	
+									imagelogo = pygame.image.load(train.logofile)
+									self.screen.blit(imagelogo, (100+train.logoxpos,vert2))
 								text=font.render(train.rail, 1, (225, 225, 225))
 								self.screen.blit(text, (150,vert1))
 					
@@ -951,7 +962,8 @@ class TrainScreen (object):
 					text=font.render(text, 1, (10, 10, 10))
 					self.screen.blit(text, (5,y2-intI))
 					if MyTrain.logofile != "None":
-						self.screen.blit(MyTrain.logofile, (100+MyTrain.logoxpos,y2+2-intI))
+						imagelogo = pygame.image.load(MyTrain.logofile)
+						self.screen.blit(imagelogo, (100+MyTrain.logoxpos,y2+2-intI))
 					text=font.render(MyTrain.rail, 1, (10, 10, 10))
 					self.screen.blit(text, (150,y2-intI))
 					pygame.display.update()
@@ -998,10 +1010,8 @@ class TrainScreen (object):
 			pygame.display.update()
 
 	def __del__(self):
-		"Destructor to make sure pygame shuts down, etc."
+		"""Clean up"""
 
-
-			
 def GetStationByID(inty):
 	obj=Station()
 	for obj in MyStations:
@@ -1026,6 +1036,7 @@ def GetTrainTypeByType(type):
 
 
 def tail_lines(filename,linesback=10,returnlist=0):
+    ##source: Ed Pascoe: http://code.activestate.com/recipes/157035-tail-f-in-python/
     """Does what "tail -10 filename" would have done
        Parameters:
             filename   file to read
@@ -1064,14 +1075,29 @@ def CheckAdvertize(MyActiveStation):
 			if MyTrain.rail != "-": MyActiveStation.advertizemode = 0
 
 
-def departure-board():
+def departureboard():
 	
+	#main code
 	MyStation = ""
 	
 	# instantiate
 	config = ConfigParser()
 
 	apppath = os.path.realpath(__file__)
+
+
+	nameof_killfile="stop_processx.txt"
+	if os.path.exists(apppath+nameof_killfile): 
+		os.remove(apppath+nameof_killfile)
+		
+	nameof_killfile="kill_pi.txt"
+	if os.path.exists(apppath+nameof_killfile):
+		os.remove(apppath+nameof_killfile)
+
+	nameof_killfile="reboot_pi.txt"
+	if os.path.exists(apppath+nameof_killfile):
+		os.remove(apppath+nameof_killfile)
+
 
 	#read departure-board.ini for location ini files etc.
 	config.read('departure-board.ini')
@@ -1083,8 +1109,7 @@ def departure-board():
 	msgvolume = float(config.getint('General','msgvolume'))/100
 	useTFT = config.getboolean('General','usetft')
 	
-	#read stations-ini file
-	# parse stations file
+	#read Trackinfo.ini file
 	config.read(inipath+'Trackinfo.ini')
 	logging.info (strftime("%H:%M:%S",time.localtime(time.time()))+': Open '+inipath+'Trackinfo.ini for input')
 	
@@ -1093,8 +1118,8 @@ def departure-board():
 	countoftraintype = config.getint('General','traintypecount')
 	for intI in range (1, countoftraintype+1):
 		MyTrainType = TrainType()
-		MyTrainType.id = config.getint('TrainType'+str(intI), 'id')
-		MyTrainType.type = config.get('TrainType+str(intI), 'type')
+		MyTrainType.id = config.getint('TrainType'+str(intI), 'id')	
+		MyTrainType.type = config.get('TrainType'+str(intI), 'type')
 		MyTrainType.logoxpos = config.getint('TrainType'+str(intI), 'logoxpos')
 		logofile = config.get('TrainType'+str(intI), 'logofile')
 		if logofile != "None":
@@ -1124,7 +1149,6 @@ def departure-board():
 
 	#read routeinfo (in Trackinfo.ini)
 	countofrouteinfo = config.getint('General','routeinfocount')
-
 	for intI in range (1, countofrouteinfo+1):
 		MyRouteInfo = RouteInfo()
 		MyRouteInfo.id = config.getint('Routeinfo'+str(intI), 'id')
@@ -1142,6 +1166,9 @@ def departure-board():
 	#initialize TrainScreen
 	MyTrainScreen = TrainScreen()
 
+	
+	#set imagelogofile
+	MyTrainScreen.imagelogofile = logopath + "logo.png" 
 	
 	#setvolume
 	MyTrainScreen.msgvolume = msgvolume
@@ -1187,6 +1214,7 @@ def departure-board():
 	t0=time.time()
 	logging.info (strftime("%H:%M:%S",time.localtime(time.time()))+': latest koploperfile: '+koploperlog)
 
+	#main loop
 	while True:
 		if MyTrainScreen.activestation.advertizemode ==1:
 			if MyTrainScreen.activestation.GetActiveAd().type == "MP4": 
@@ -1231,7 +1259,7 @@ def departure-board():
 			
 	
 		nameof_killfile="stop_processx.txt"
-		if os.path.exists(nameof_killfile): 
+		if os.path.exists(apppath+nameof_killfile): 
    	 		os.remove(nameof_killfile)
 			exit()
 			
@@ -1259,18 +1287,23 @@ def departure-board():
 			if os.geteuid() != 0:
 				exit()
 			else:
-				response = raw_input("What to do with other PI's? (r=reboot, s=shutdown, n=nothing")
-				if response =="s":
-					os.system("cp " + inipath+"kill_pi.txt "+apppath+"kill_pi.txt")
-				if response =="r":
-					os.system("cp " + inipath+"reboot_pi.txt "+apppath+"reboot_pi.txt")
-				response = raw_input("Quit app?")
-				if response =="y":
-					os.remove(apppath+nameof_killfile)
+				response = raw_input("What to do with other PI's? Reboot (1 or r), Shutdown (2 or s), Nothing (0 or n): ")
+				if response =="2" or response == "s":
+					os.system("cp " + inipath+"kill_pi.txt " + apppath+"kill_pi.txt")
+				if response =="1" or response == "r":
+					os.system("cp " + inipath+"reboot_pi.txt " + apppath+"reboot_pi.txt")
+				response = raw_input("Quit app? (0=no, 1=yes)")
+				if response =="1" or response == "y":
+					nameof_killfile="kill_pi.txt"
+					if os.path.exists(apppath+nameof_killfile):
+   	 					os.remove(apppath+nameof_killfile)
+					nameof_killfile="reboot_pi.txt"
+					if os.path.exists(apppath+nameof_killfile):
+   	 					os.remove(apppath+nameof_killfile)
 					exit()
 		
 
-		#trein 1 vertrekt of komt aan
+		#train 1 leaves of arrives
 		if (event.type == pygame.KEYDOWN) and (event.key == 0x101):
 			MyTrain = Train()
 			train = Train()
@@ -1294,7 +1327,7 @@ def departure-board():
 			else:
 				MyTrainScreen.TrainArrival(newtrainid, newtraintime, newtrainrail, MyTrainScreen.activestation.id,'')
 		
-		#trein 2 vertrekt of komt aan
+		#train 2 leaves of arrives
 		if (event.type == pygame.KEYDOWN) and (event.key == 0x102):
 			MyTrain = Train()
 			train = Train()
@@ -1320,7 +1353,7 @@ def departure-board():
 				MyTrainScreen.TrainArrival(newtrainid, newtraintime, newtrainrail, MyTrainScreen.activestation.id,'')
 
 
-		#trein 3 komt aan
+		#train 3 arrives
 		if (event.type == pygame.KEYDOWN) and (event.key == 0x103):
 			MyTrain = Train()
 			train = Train()
@@ -1334,7 +1367,7 @@ def departure-board():
 			MyTrainScreen.TrainArrival(newtrainid, newtraintime, newtrainrail, MyTrainScreen.activestation.id,'')
 
 
-		#trein 4 komt aan
+		#train 4 arrives
 		if (event.type == pygame.KEYDOWN) and (event.key == 0x104):
 			MyTrain = Train()
 			train = Train()
@@ -1347,7 +1380,7 @@ def departure-board():
 			newtrainrail = "2"				
 			MyTrainScreen.TrainArrival(newtrainid, newtraintime, newtrainrail, MyTrainScreen.activestation.id,'')
 
-		#trein 5 komt aan
+		#train 5 arrives
 		if (event.type == pygame.KEYDOWN) and (event.key == 0x105):
 			MyTrain = Train()
 			train = Train()
@@ -1361,7 +1394,7 @@ def departure-board():
 			MyTrainScreen.TrainArrival(newtrainid, newtraintime, newtrainrail, MyTrainScreen.activestation.id,'')
 
 	
-		#trein 6 komt aan
+		#train 6 arrives
 		if (event.type == pygame.KEYDOWN) and (event.key == 0x106):
 			MyTrain = Train()
 			train = Train()
@@ -1374,7 +1407,7 @@ def departure-board():
 			newtrainrail = "1"				
 			MyTrainScreen.TrainArrival(newtrainid, newtraintime, newtrainrail, MyTrainScreen.activestation.id,'')
 
-		#volgende station
+		#switch to next station
 		if (event.type == pygame.KEYDOWN) and (event.key == pygame.K_KP_MULTIPLY):
 			MyStation = Station()
 			MyActiveStationID = MyTrainScreen.activestation.id
@@ -1433,25 +1466,13 @@ if __name__ == '__main__':
 		if os.path.exists('DevErrors.log'): 
    	 		os.remove('DevErrors.log')
 
-		nameof_killfile="stop_processx.txt"
-		if os.path.exists(nameof_killfile): 
-   	 		os.remove(nameof_killfile)
-			
-		nameof_killfile="kill_pi.txt"
-		if os.path.exists(apppath+nameof_killfile):
-   	 		os.remove(nameof_killfile)
-
-		nameof_killfile="reboot_pi.txt"
-		if os.path.exists(apppath+nameof_killfile):
-   	 		os.remove(nameof_killfile)
-
 
 		logging.basicConfig(level=logging.DEBUG, filename='DevErrors.log')
 		t0=time.time()
 		inipath=''
 		
 		try:
-    			departure-board()
+    			departureboard()
 		except:
     			logging.exception("Error in departure-board:")
     	
