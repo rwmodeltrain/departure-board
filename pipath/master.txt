@@ -1,0 +1,1 @@
+Include this file if the PI running this script is controlling the other PI's. Difference: py script starts as sudo. Only as sudo it is possible to write to a smb share (neccesary to write trainpositions when leaving app) and as master there is control over the other PI's while exiting the app (reboot, restart).
