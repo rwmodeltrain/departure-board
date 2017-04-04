@@ -669,7 +669,7 @@ class TrainScreen (object):
 				movie.set_display(self.screen, mrect.move(0, 0)) 
 
 				if self.msgvolume !=0:
-					movie.set_volume(self.msgvolume/2)
+					movie.set_volume(self.msgvolume/3)
 				else:
 					movie.set_volume(0)
 
@@ -1198,7 +1198,7 @@ def departureboard():
 	MySound = pygame.mixer.Sound(audiofile)
 	MySound.set_volume(MyTrainScreen.msgvolume)
 	MySound.play(0,0,0)
-	logging.info(strftime("%H:%M:%S",time.localtime(time.time()))+': First whistle played ('+audiofile+')')
+	logging.info(strftime("%H:%M:%S",time.localtime(time.time()))+': First whistle played ('+audiofile+') with volume ' + str(MyTrainScreen.msgvolume))
 
 	MyTrainScreen.InitScreen()
 	
