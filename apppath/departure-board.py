@@ -104,6 +104,16 @@ class Station(object):
 		@advertizemode.setter
 		def advertizemode(self, advertizemode):
 			self.__advertizemode=advertizemode
+			
+		#enableAds
+		@property
+		def enableAds(self):
+			return self.__enableAds
+
+		@enableAds.setter
+		def enableAds(self, enableAds):
+			self.__enableAds=enableAds
+
 	
 
 	def GetTrainsFromIniFile (self,inipath):
@@ -548,6 +558,15 @@ class TrainScreen (object):
 		def useTFT(self, useTFT):
 			self.__useTFT=useTFT
 
+		#useRpi
+		@property
+		def useRpi(self):
+			return self.__useRpi
+
+		@useRpi.setter
+		def useRpi(self, useRpi):
+			self.__useRpi=useRpi
+		
 		#screenwidth
 		@property
 		def screenwidth(self):
@@ -576,19 +595,60 @@ class TrainScreen (object):
 			self.__imagelogofile=imagelogofile
 
 
+		#imagespeakerfile
+		@property
+		def imagespeakerfile(self):
+			return self.__imagespeakerfile
+
+		@imagespeakerfile.setter
+		def imagespeakerfile(self, imagespeakerfile):
+			self.__imagespeakerfile=imagespeakerfile
+
+		#speakermode
+		@property
+		def speakermode(self):
+			return self.__speakermode
+
+		@speakermode.setter
+		def speakermode(self, speakermode):
+			self.__speakermode=speakermode
+
+		#t1
+		@property
+		def t1(self):
+			return self.__t1
+
+		@t1.setter
+		def t1(self, t1):
+			self.__t1=t1
+
+
+
+
 	def InitPanel(self):
 		#Init new pygame screen
 		if self.useTFT==True:
 			os.environ["SDL_FBDEV"] = "/dev/fb1"
-		
+				
 		pygame.mixer.pre_init(44100, -16, 2, 2048)
 		pygame.display.init()
 
-		size = (pygame.display.Info().current_w, pygame.display.Info().current_h)
+		
+		if self.useRpi==True:
+			size = (pygame.display.Info().current_w, pygame.display.Info().current_h)
+		else:
+			size = (160,128)
+
+		
 		print "Screen size: %d x %d" % (size[0], size[1])
 		self.screenwidth = size[0]
 		self.screenheight = size[1]
-		self.screen = pygame.display.set_mode(size, pygame.FULLSCREEN)
+
+		if self.useRpi==True:
+			self.screen = pygame.display.set_mode(size, pygame.FULLSCREEN)		
+		else:
+			self.screen = pygame.display.set_mode(size, pygame.RESIZABLE)
+		
 		# Clear the screen to start
 		self.screen.fill((0, 0, 0))        
 		# Initialise use of font
@@ -628,6 +688,13 @@ class TrainScreen (object):
 			text=font.render(self.strTime, 1, (10, 10, 10))
 			self.screen.blit(text, (127, 7))			
 
+			#speaker
+			if self.speakermode == "On":
+				#self.rect = pygame.draw.rect(self.screen, (255, 255, 255), (50, 19, 70, 27), 0)
+				image = pygame.image.load(self.imagespeakerfile)
+				#text=font.render('SPEAKER',1,(10,10,10))
+				self.screen.blit(image, (50,19))
+				#self.screen.blit(text,(50,15))
 
 			#departure header
 			text=font.render('DEPART', 1, (10,10,10))
@@ -704,6 +771,11 @@ class TrainScreen (object):
 			self.screen.blit(text, (127, 7))			
 			pygame.display.update()
 	
+	def UpdateSpeaker(self):
+		self.rect = pygame.draw.rect(self.screen, (255, 255, 255), (50, 19, 70, 29), 0)
+		pygame.display.update()
+	
+	
 
 	def TrainDeparture(self, trainid, stationid, audiofile):
 	
@@ -757,7 +829,7 @@ class TrainScreen (object):
 			for intI in range (0, 120):
 				#grey box
 				self.rect = pygame.draw.rect(self.screen, (225, 225, 225), (35, y1, 145, 13), 0)
-				if self.useTFT == True:
+				if self.useTFT == True or self.useRpi == False:
 					time.sleep(0.02)
 				text=font.render(MyTrain.destination, 1, (10, 10, 10))
 				self.screen.blit(text, (35+intI,y1))
@@ -774,7 +846,7 @@ class TrainScreen (object):
 			for intI in range (0, 135):
 				# maak vakje grijs waar de tekst moet scrollen
 				self.rect = pygame.draw.rect(self.screen, (225, 225, 225), (0, y1, 145, 13), 0)
-				if self.useTFT == True:
+				if self.useTFT == True or self.useRpi == False:
 					time.sleep(0.02)
 				text=font.render(MyTrain.destination, 1, (10, 10, 10))
 				self.screen.blit(text, (-100+intI,y1))
@@ -806,7 +878,7 @@ class TrainScreen (object):
 				self.rect = pygame.draw.rect(self.screen, (255,255,255),(160,y1,160,13),0)
 
 				pygame.display.update()
-				if self.useTFT == True:
+				if self.useTFT == True or self.useRpi == False:
 					time.sleep(0.02)
 
 		
@@ -836,7 +908,7 @@ class TrainScreen (object):
 						self.screen.blit(text, (150,vert1))
 								
 				pygame.display.update()
-				if self.useTFT == True:
+				if self.useTFT == True or self.useRpi == False:
 					time.sleep(0.1)
 				else:
 					time.sleep(0.05)
@@ -904,6 +976,8 @@ class TrainScreen (object):
 			MySound = pygame.mixer.Sound(audiofile)
 			MySound.set_volume(self.msgvolume)
 			MySound.play(0,0,0)
+			self.speakermode = "On"
+			self.t1 = time.time()
 			logging.info(strftime("%H:%M:%S",time.localtime(time.time()))+": Sound play command given for file: " + audiofile)
 
 			self.activestation.advertizemode = 0
@@ -1069,11 +1143,13 @@ def tail_lines(filename,linesback=10,returnlist=0):
     return out
 
 def CheckAdvertize(MyActiveStation):
-		MyActiveStation.advertizemode = 1
-		MyTrain = Train()
-		for MyTrain in MyActiveStation.trains:
-			if MyTrain.rail != "-": MyActiveStation.advertizemode = 0
-
+		if MyActiveStation.enableAds == True:
+			MyActiveStation.advertizemode = 1
+			MyTrain = Train()
+			for MyTrain in MyActiveStation.trains:
+				if MyTrain.rail != "-": MyActiveStation.advertizemode = 0
+		else:
+			MyActiveStation.advertizemode = 0
 
 def departureboard():
 	
@@ -1108,6 +1184,9 @@ def departureboard():
 	CurrentStation = config.get('General','currentstation')
 	msgvolume = float(config.getint('General','msgvolume'))/100
 	useTFT = config.getboolean('General','usetft')
+	useRpi = config.getboolean('General','useRpi')
+	enableAds = config.getboolean('General','enableAds')
+
 	
 	#read Trackinfo.ini file
 	config.read(inipath+'Trackinfo.ini')
@@ -1169,15 +1248,26 @@ def departureboard():
 	
 	#set imagelogofile
 	MyTrainScreen.imagelogofile = logopath + "logo.png" 
+	MyTrainScreen.imagespeakerfile = logopath + "speaker.png"
+	
+	#set speakervisibility
+	MyTrainScreen.speakermode = "Off"
 	
 	#setvolume
 	MyTrainScreen.msgvolume = msgvolume
 	logging.info(strftime("%H:%M:%S",time.localtime(time.time()))+': Volume: '+str(msgvolume))
 	
+	#setenabelAds
+	logging.info(strftime("%H:%M:%S",time.localtime(time.time()))+': Show ads: '+str(enableAds))
+			
 	#setuseofTFT
 	logging.info(strftime("%H:%M:%S",time.localtime(time.time()))+': Use TFT: '+str(useTFT))
 	MyTrainScreen.useTFT = useTFT
-
+	
+	#setuseofRpi
+	logging.info(strftime("%H:%M:%S",time.localtime(time.time()))+': Use RPi: '+str(useRpi))
+	MyTrainScreen.useRpi = useRpi
+	
 	#init Panel
 	MyTrainScreen.InitPanel()
 	
@@ -1185,6 +1275,9 @@ def departureboard():
 	#set active station
 	MyTrainScreen.activestation = MyStations.GetActiveStation()
 	MyTrainScreen.activestation.advertizemode = 0
+	MyTrainScreen.activestation.enableAds = enableAds
+
+	
 	CheckAdvertize (MyTrainScreen.activestation)
 	logging.info (strftime("%H:%M:%S",time.localtime(time.time()))+': '+"ActiveStation: "+MyTrainScreen.activestation.name)
 	logging.info (strftime("%H:%M:%S",time.localtime(time.time()))+': '+"ActiveAd: " + MyTrainScreen.activestation.GetActiveAd().filename)
@@ -1212,6 +1305,7 @@ def departureboard():
 	latest=1
 	x=0
 	t0=time.time()
+	MyTrainScreen.t1=time.time()
 	logging.info (strftime("%H:%M:%S",time.localtime(time.time()))+': latest koploperfile: '+koploperlog)
 
 	#main loop
@@ -1219,6 +1313,10 @@ def departureboard():
 		if MyTrainScreen.activestation.advertizemode ==1:
 			if MyTrainScreen.activestation.GetActiveAd().type == "MP4": 
 				t0=0
+		if time.time() - MyTrainScreen.t1 > 9:
+			if MyTrainScreen.speakermode == "On":
+				MyTrainScreen.speakermode = "Off"
+				MyTrainScreen.UpdateSpeaker()
 		if time.time() - t0 > 5:
 				CheckAdvertize(MyTrainScreen.activestation)
 				if MyTrainScreen.activestation.advertizemode != 0:
@@ -1422,6 +1520,7 @@ def departureboard():
 			
 			MyTrainScreen.activestation = MyStations.GetActiveStation()
 			MyTrainScreen.activestation.advertizemode = 0
+			MyTrainScreen.activestation.enableAds = enableAds
 			MyTrainScreen.InitScreen()
 			
 			
