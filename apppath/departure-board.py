@@ -669,7 +669,7 @@ class TrainScreen (object):
 		exit()
 
 	def InitScreen(self):
-		self.strTime = strftime("%H:%M", gmtime())
+		self.strTime = strftime("%H:%M",time.localtime(time.time()))
 		pygame.mouse.set_visible(0)
 		# Fill the screen with white (255, 255, 255)
 		white = (255, 255, 255)
@@ -761,7 +761,7 @@ class TrainScreen (object):
 			self.InitScreen()
 
 	def UpdateTime(self):
-		CurTime = strftime("%H:%M:%S", gmtime())
+		CurTime = strftime("%H:%M",time.localtime(time.time()))
 		print self.strTime
 		if CurTime != self.strTime:
 			self.strTime = CurTime
